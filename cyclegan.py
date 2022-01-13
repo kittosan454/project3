@@ -100,6 +100,7 @@ class CycleGAN():
                                             self.lambda_id, self.lambda_id ],
                             optimizer=optimizer)
 
+    ########################################### 생성자 모델 ###################################
     def build_generator(self):
         """U-Net Generator"""
 
@@ -139,6 +140,7 @@ class CycleGAN():
 
         return Model(d0, output_img)
 
+    ################################## 판별자 모델 #########################################
     def build_discriminator(self):
 
         def d_layer(layer_input, filters, f_size=4, normalization=True):
@@ -164,9 +166,9 @@ class CycleGAN():
 
         start_time = datetime.datetime.now()
 
-        # Adversarial loss ground truths
-        valid = np.ones((batch_size,) + self.disc_patch)
-        fake = np.zeros((batch_size,) + self.disc_patch)
+        # Adversarial loss ground truths 4차원으로 확장시켜준다.
+        valid = np.ones((batch_size,) + self.disc_patch) # 1로 채운다(진짜)
+        fake = np.zeros((batch_size,) + self.disc_patch) # 0으로 채운다 (가짜)
 
         for epoch in range(epochs):
             for batch_i, (imgs_A, imgs_B) in enumerate(self.data_loader.load_batch(batch_size)):
@@ -228,22 +230,18 @@ class CycleGAN():
         imgs_A = self.data_loader.load_data(domain="A", batch_size=1, is_testing=True)
         imgs_B = self.data_loader.load_data(domain="B", batch_size=1, is_testing=True)
 
-        # Demo (for GIF)
-        #imgs_A = self.data_loader.load_img('datasets/apple2orange/testA/n07740461_1541.jpg')
-        #imgs_B = self.data_loader.load_img('datasets/apple2orange/testB/n07749192_4241.jpg')
-
-        # Translate images to the other domain
+        # 가짜 이미지
         fake_B = self.g_AB.predict(imgs_A)
         fake_A = self.g_BA.predict(imgs_B)
-        # Translate back to original domain
+        # 복원 이미지
         reconstr_A = self.g_BA.predict(fake_B)
         reconstr_B = self.g_AB.predict(fake_A)
 
         gen_imgs = np.concatenate([imgs_A, fake_B, reconstr_A, imgs_B, fake_A, reconstr_B])
 
-        # Rescale images 0 - 1
+        # Rescale images 0 - 1 이미지 밝기 조절
         gen_imgs = 0.5 * gen_imgs + 0.5
-
+        ### 이미지로 변환 ##
         titles = ['Original', 'Translated', 'Reconstructed']
         fig, axs = plt.subplots(r, c)
         cnt = 0
